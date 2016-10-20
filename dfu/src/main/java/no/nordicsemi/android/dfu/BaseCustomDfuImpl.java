@@ -141,8 +141,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 								buffer = new byte[available];
 							final int size = mFirmwareStream.read(buffer);
 							writePacket(gatt, characteristic, buffer, size);
-                            Thread.sleep(10); /* Hotfix. Fixed issue related to Android 7 and
-                                                old version of firefly vaporizer */
 							return;
 						} catch (final HexFileValidationException e) {
 							loge("Invalid HEX file");
@@ -150,9 +148,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 						} catch (final IOException e) {
 							loge("Error while reading the input stream", e);
 							mError = DfuBaseService.ERROR_FILE_IO_EXCEPTION;
-						} catch (InterruptedException e) {
-                            loge("Sleep was interrupted after writing a packet",e);
-                        }
+						}
                     } else {
 						onPacketCharacteristicWrite(gatt, characteristic, status);
 					}
@@ -395,6 +391,14 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
 		characteristic.setValue(locBuffer);
 		gatt.writeCharacteristic(characteristic);
+
+		// Hotfix. Fixed issue related to Android 7 (Nexus 5x) and old version of firefly vaporizer.
+		try {
+			Thread.sleep(10);
+		} catch (InterruptedException e) {
+			loge("Sleep was interrupted after writing a packet",e);
+		}
+
 		// FIXME BLE buffer overflow
 		// after writing to the device with WRITE_NO_RESPONSE property the onCharacteristicWrite callback is received immediately after writing data to a buffer.
 		// The real sending is much slower than adding to the buffer. This method does not return false if writing didn't succeed.. just the callback is not invoked.
