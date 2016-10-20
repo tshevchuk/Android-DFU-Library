@@ -141,6 +141,8 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 								buffer = new byte[available];
 							final int size = mFirmwareStream.read(buffer);
 							writePacket(gatt, characteristic, buffer, size);
+                            Thread.sleep(10); /* Hotfix. Fixed issue related to Android 7 and
+                                                old version of firefly vaporizer */
 							return;
 						} catch (final HexFileValidationException e) {
 							loge("Invalid HEX file");
@@ -148,8 +150,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 						} catch (final IOException e) {
 							loge("Error while reading the input stream", e);
 							mError = DfuBaseService.ERROR_FILE_IO_EXCEPTION;
-						}
-					} else {
+						} catch (InterruptedException e) {
+                            loge("Sleep was interrupted after writing a packet",e);
+                        }
+                    } else {
 						onPacketCharacteristicWrite(gatt, characteristic, status);
 					}
 				} else {
